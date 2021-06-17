@@ -30,94 +30,62 @@
 #include <tuple>
 #include <type_traits>
 
-
-/*
- * std::scoped_lock in C++17 Standard Library
- *
- * - yamc::scoped_lock<MutexTypes...>
- */
 namespace yamc {
 
-template <typename... MutexTypes>
+template<typename... MutexTypes>
 class scoped_lock {
-  template <std::size_t I = 0>
-  typename std::enable_if<I == sizeof...(MutexTypes), void>::type
-  invoke_unlock() {}
+	template<std::size_t I = 0>
+	typename std::enable_if<I == sizeof...(MutexTypes), void>::type invoke_unlock() { }
 
-  template <std::size_t I = 0>
-  typename std::enable_if<I < sizeof...(MutexTypes), void>::type
-  invoke_unlock()
-  {
-    std::get<I>(pm_).unlock();
-    invoke_unlock<I + 1>();
-  }
+	template<std::size_t I = 0>
+	    typename std::enable_if < I<sizeof...(MutexTypes), void>::type invoke_unlock() {
+		std::get<I>(pm_).unlock();
+		invoke_unlock<I + 1>();
+	}
 
 public:
-  explicit scoped_lock(MutexTypes&... m)
-    : pm_(m...)
-  {
-    std::lock(m...);
-  }
+	explicit scoped_lock(MutexTypes&... m) : pm_(m...) { std::lock(m...); }
 
-  explicit scoped_lock(std::adopt_lock_t, MutexTypes&... m)
-    : pm_(m...)
-  {
-  }
+	explicit scoped_lock(std::adopt_lock_t, MutexTypes&... m) : pm_(m...) { }
 
-  ~scoped_lock()
-  {
-    invoke_unlock<>();
-  }
+	~scoped_lock() { invoke_unlock<>(); }
 
-  scoped_lock(const scoped_lock&) = delete;
-  scoped_lock& operator=(const scoped_lock&) = delete;
+	scoped_lock(const scoped_lock&) = delete;
+	scoped_lock& operator=(const scoped_lock&) = delete;
 
 private:
-  std::tuple<MutexTypes&...> pm_;
+	std::tuple<MutexTypes&...> pm_;
 };
 
-
-template <>
+template<>
 class scoped_lock<> {
 public:
-  explicit scoped_lock() = default;
-  explicit scoped_lock(std::adopt_lock_t) {}
-  ~scoped_lock() = default;
+	explicit scoped_lock() = default;
+	explicit scoped_lock(std::adopt_lock_t) { }
+	~scoped_lock() = default;
 
-  scoped_lock(const scoped_lock&) = delete;
-  scoped_lock& operator=(const scoped_lock&) = delete;
+	scoped_lock(const scoped_lock&) = delete;
+	scoped_lock& operator=(const scoped_lock&) = delete;
 };
 
-
-template <typename Mutex>
+template<typename Mutex>
 class scoped_lock<Mutex> {
 public:
-  using mutex_type = Mutex;
+	using mutex_type = Mutex;
 
-  explicit scoped_lock(Mutex& m)
-    : m_(m)
-  {
-    m.lock();
-  }
+	explicit scoped_lock(Mutex& m) : m_(m) { m.lock(); }
 
-  explicit scoped_lock(std::adopt_lock_t, Mutex& m)
-    : m_(m)
-  {
-  }
+	explicit scoped_lock(std::adopt_lock_t, Mutex& m) : m_(m) { }
 
-  ~scoped_lock()
-  {
-    m_.unlock();
-  }
+	~scoped_lock() { m_.unlock(); }
 
-  scoped_lock(const scoped_lock&) = delete;
-  scoped_lock& operator=(const scoped_lock&) = delete;
+	scoped_lock(const scoped_lock&) = delete;
+	scoped_lock& operator=(const scoped_lock&) = delete;
 
 private:
-  Mutex& m_;
+	Mutex& m_;
 };
 
-
-} // namespace yamc
+}    // namespace yamc
 
 #endif
